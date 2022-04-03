@@ -1,0 +1,36 @@
+{
+  "name": "whatsapp-auto-update",
+  "version": "0.0.1",
+  "description": "Interval update whatsapp profile picture and info",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tailwindcss -i ./style.css -o ./static/css/tailwind.css && cleancss -o ./static/css/tailwind.min.css ./static/css/tailwind.css",
+    "dev": "nodemon ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salismazaya/whatsapp-auto-update.git"
+  },
+  "author": "Salis Mazaya",
+  "license": "MIT",
+  "dependencies": {
+    "@adiwajshing/baileys": "3.5.3",
+    "autoprefixer": "10.4.4",
+    "bcrypt": "^5.0.1",
+    "body-parser": "^1.20.0",
+    "clean-css-cli": "^5.5.2",
+    "connect-flash": "^0.1.1",
+    "connect-mongodb-session": "^3.1.1",
+    "ejs": "^3.1.6",
+    "express": "^4.17.3",
+    "express-session": "^1.17.2",
+    "mongoose": "^6.2.9",
+    "postcss": "8.4.12",
+    "tailwindcss": "2.2.19"
+  },
+  "bugs": {
+    "url": "https://github.com/salismazaya/whatsapp-auto-update/issues"
+  },
+  "homepage": "https://github.com/salismazaya/whatsapp-auto-update#readme"
+}

@@ -1,0 +1,17 @@
+<% const messages = get_messages() %> 
+<% for( let index = 0; index < messages.length; index++ ) { %>
+    <% const message = messages[index] %>
+    <% if (message.type == 'success') { %>
+        <div class="rounded bg-green-100 border border-green-500 p-2 my-1">
+            <%= message.message %>
+        </div>
+    <% } else if (message.type == 'warning') { %>
+        <div class="rounded bg-yellow-100 border border-yellow-500 p-2 my-1">
+            <%= message.message %> 
+        </div>
+    <% } else if (message.type == 'error') { %>
+        <div class="rounded bg-red-100 border border-red-500 p-2 my-1">
+            <%= message.message %> 
+        </div>
+    <% } %> 
+<% } %>
