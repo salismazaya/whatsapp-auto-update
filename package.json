@@ -1,7 +1,7 @@
 {
   "name": "whatsapp-auto-update",
   "version": "0.0.1",
-  "description": "Interval update whatsapp profile picture and info",
+  "description": "Interval update whatsapp profile picture and other utilities",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
