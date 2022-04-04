@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<%- include('layouts/head') %>
+</head>
+<body>
+	<%- include('layouts/navbar') %>
+
+    <div class="mx-5 mt-5">
+        <img class="hidden" id="qr-image">
+        <button class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600" id="connect-button">Connect</button>
+    </div>
+
+    <%- include('layouts/footer') %> 
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const connect_button = document.getElementById('connect-button');
+        const qr_image = document.getElementById('qr-image')
+
+        connect_button.addEventListener('click', () => {
+            connect_button.classList.add('hidden');
+            socket.emit('connect-wa', '<%= sess_id %>')
+        })
+
+        socket.on('QRImage', (img_uri) => {
+            qr_image.classList.remove('hidden')
+            qr_image.setAttribute('src', img_uri)
+        })
+    </script>
+</body>
+</html>

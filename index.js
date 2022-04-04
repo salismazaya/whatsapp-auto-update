@@ -1,12 +1,19 @@
 const express = require('express')
 const session = require('express-session')
 const mongoose = require('mongoose')
-const MongoDBStore = require('connect-mongodb-session')(session);
+const MongoDBStore = require('connect-mongodb-session')(session)
 const flash = require('connect-flash')
 const bcrypt = require('bcrypt')
 const bodyParser = require('body-parser')
 const { User, WaSession } = require('./models')
+const { login_required, logout_required } = require('./middlewares')
+const { createWaSession } = require('./wa')
 const app = express()
+const http = require('http')
+const server = http.createServer(app)
+const { Server } = require('socket.io')
+const qrcode = require('qrcode')
+const io = new Server(server)
 const PORT = process.env.PORT || 3000
 
 const store = new MongoDBStore({
@@ -34,11 +41,47 @@ app.use((req, res, next) => {
 	res.locals.get_messages = () => {
 		return req.flash('messages')
 	}
+
+	console.log(`${req.method} - ${req.path}`)
 	next()
 })
 
-app.get('/', (req, res) => {
-	console.log(req.session)
+io.on('connection', (socket) => {
+	console.log('a user connected to socket')
+	socket.on('connect-wa', async (sess_id) => {
+	  	const sess = await mongoose.connection.db.collection('sessions').findOne({
+			'_id': sess_id
+	  	})
+		let wa_session = await WaSession.findOne({
+			user_id: sess.session.user._id.toString()
+		})
+		if (wa_session) {
+			return
+		}
+
+		createWaSession({
+			retry: 5,
+			before: (client) => {
+				socket.on('disconnect', async () => {
+					client.ev.removeAllListeners()
+					client.end()
+					console.log('disconnect on qr - closing wa web connection')
+				})
+			},
+			qr: async (qr) => {
+				socket.emit('QRImage', await qrcode.toDataURL(qr))
+			},
+			failed: () => {
+				console.log('max retries - closing wa web connection')
+			},
+			success: (legacy, authInfo) => {
+				socket.emit('connected-wa', legacy)
+			}
+		})
+	})
+})
+
+app.get('/', logout_required, (req, res) => {
 	const context = {
 		'title': 'Login',
 	}
@@ -138,8 +181,20 @@ app.post('/register', async (req, res) => {
 	res.redirect('')
 })
 
+
+app.get('/dashboard', login_required, (req, res) => {
+	if (!req.session.user) {
+		return
+	}
+	const context = {
+		'title': 'Dashboard',
+		'sess_id': req.sessionID
+	}
+	res.render('templates/dashboard', context)
+})
+
 mongoose.connect(process.env.DATABASE || 'mongodb://127.0.0.1:27017/wa-auto-update').then(() => {
-	app.listen(PORT, () => {
+	server.listen(PORT, () => {
 		console.log(`App listening on port ${PORT}`)
 	})
 })

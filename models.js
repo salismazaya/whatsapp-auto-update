@@ -13,14 +13,11 @@ const User = mongoose.model('User', {
         type: String,
         required: true,
     },
-    whatsapp_id: {
-        type: String,
-    },
 })
 
 const WaSession = mongoose.model('WaSession', {
     user_id: {
-        type: Number,
+        type: String,
         required: true,
     },
     session: {

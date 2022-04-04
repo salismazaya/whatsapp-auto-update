@@ -15,7 +15,7 @@
   "author": "Salis Mazaya",
   "license": "MIT",
   "dependencies": {
-    "@adiwajshing/baileys": "3.5.3",
+    "@adiwajshing/baileys": "^4.0.1",
     "autoprefixer": "10.4.4",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.20.0",
@@ -27,6 +27,9 @@
     "express-session": "^1.17.2",
     "mongoose": "^6.2.9",
     "postcss": "8.4.12",
+    "qrcode": "^1.5.0",
+    "qrcode-terminal": "^0.12.0",
+    "socket.io": "^4.4.1",
     "tailwindcss": "2.2.19"
   },
   "bugs": {
