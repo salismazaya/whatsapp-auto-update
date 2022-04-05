@@ -6,9 +6,24 @@
 <body>
 	<%- include('layouts/navbar') %>
 
-    <div class="mx-5 mt-5">
-        <img class="hidden" id="qr-image">
-        <button class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600" id="connect-button">Connect</button>
+    <div class="mx-5 mt-5" x-data="data" x-init="init">
+        <center>
+            <div style="height: 276px; width: 276px;" class="rounded bg-gray-300 my-2 p-1" x-show="!(connect_status == 'connected')">
+                <img :src="qr_uri" x-show="qr_showed">
+            </div>
+            <div x-show="connect_status == 'disconnect'">
+                <button x-on:click="button_clicked" class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600">Connect</button>
+            </div>
+            <div x-show="connect_status == 'connecting'">
+                <button class="rounded-sm px-2 py-1 text-white bg-yellow-600">Connecting</button>
+            </div>
+            <div x-show="connect_status == 'connected'">
+                <p>Whastsapp ID: <span x-text="whatsapp_id"></span></p>
+                <p>Name: <span x-text="whatsapp_name"></span></p>
+                <button class="rounded-sm px-2 my-1 py-1 text-white bg-green-600 block">Connected</button>
+                <button class="rounded-sm px-2.5 my-1 py-1 text-white bg-red-600 hover:bg-red-700 block">Disonnect</button>
+            </div>
+        </center>
     </div>
 
     <%- include('layouts/footer') %> 
@@ -16,18 +31,33 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        const connect_button = document.getElementById('connect-button');
-        const qr_image = document.getElementById('qr-image')
+        function data() {
+            return {
+                init() {
+                    socket.on('QRImage', (img_uri) => {
+                        this.qr_showed = true;
+                        this.qr_uri = img_uri
+                    });
 
-        connect_button.addEventListener('click', () => {
-            connect_button.classList.add('hidden');
-            socket.emit('connect-wa', '<%= sess_id %>')
-        })
-
-        socket.on('QRImage', (img_uri) => {
-            qr_image.classList.remove('hidden')
-            qr_image.setAttribute('src', img_uri)
-        })
+                    socket.on('connected-wa', (authState) => {
+                        this.whatsapp_id = authState.creds.me.id;
+                        this.whatsapp_name = authState.creds.me.verifiedName || authState.creds.me.name || 'Anonymous';
+                        this.connect_status = 'connected';
+                    });
+                },
+                whatsapp_id: '<%= whatsapp_id %>',
+                whatsapp_name: '<%= whatsapp_name %>',
+                qr_showed: false,
+                qr_uri: '',
+                connect_status: '<%= connect_status %>',
+                button_clicked() {
+                    if (this.connect_status == 'disconnect') {
+                        this.connect_status = 'connecting';
+                    }
+                    socket.emit('connect-wa', '<%= sess_id %>')
+                },
+            }
+        }
     </script>
 </body>
 </html>

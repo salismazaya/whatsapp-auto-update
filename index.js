@@ -50,12 +50,17 @@ io.on('connection', (socket) => {
 	console.log('a user connected to socket')
 	socket.on('connect-wa', async (sess_id) => {
 	  	const sess = await mongoose.connection.db.collection('sessions').findOne({
-			'_id': sess_id
+			_id: sess_id
 	  	})
-		let wa_session = await WaSession.findOne({
+		const wa_session = await WaSession.findOne({
 			user_id: sess.session.user._id.toString()
 		})
-		if (wa_session) {
+
+		const user = await User.findOne({
+			_id: sess.session.user._id.toString()
+		})
+
+		if (wa_session || !user) {
 			return
 		}
 
@@ -71,11 +76,16 @@ io.on('connection', (socket) => {
 			qr: async (qr) => {
 				socket.emit('QRImage', await qrcode.toDataURL(qr))
 			},
-			failed: () => {
+			failed: (client) => {
 				console.log('max retries - closing wa web connection')
 			},
-			success: (legacy, authInfo) => {
-				socket.emit('connected-wa', legacy)
+			success: async (client, authState) => {
+				const wa_session = new WaSession({
+					user_id: user._id,
+					session: JSON.stringify(authState)
+				})
+				await wa_session.save()
+				socket.emit('connected-wa', authState)
 			}
 		})
 	})
@@ -182,14 +192,31 @@ app.post('/register', async (req, res) => {
 })
 
 
-app.get('/dashboard', login_required, (req, res) => {
+app.get('/dashboard', login_required, async (req, res) => {
 	if (!req.session.user) {
 		return
 	}
+	
+	const wa_session = await WaSession.findOne({
+		user_id: req.session.user._id.toString()
+	})
+
 	const context = {
-		'title': 'Dashboard',
-		'sess_id': req.sessionID
+		title: 'Dashboard',
+		sess_id: req.sessionID
 	}
+
+	if (wa_session) {
+		const authState = JSON.parse(wa_session.session)
+		context.whatsapp_id = authState.creds.me.id
+		context.whatsapp_name = authState.creds.me.verifiedName || authState.creds.me.name || 'Anonymous';
+	} else {
+		context.whatsapp_id = ''
+		context.whatsapp_name = ''
+	}
+
+	context.connect_status = wa_session ? 'connected' : 'disconnect'
+
 	res.render('templates/dashboard', context)
 })
 

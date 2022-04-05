@@ -3,3 +3,6 @@ package-lock.json
 tailwind.css
 tailwind.min.css
 tes.js
+tes.ts
+auth-info-multi.json
+tmp
