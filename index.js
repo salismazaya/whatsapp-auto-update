@@ -91,6 +91,13 @@ io.on('connection', (socket) => {
 	})
 })
 
+app.get('/', (req, res) => {
+	const context = {
+		'title': 'Home',
+	}
+	res.render('templates/index', context)
+})
+
 app.get('/login', logout_required, (req, res) => {
 	const context = {
 		'title': 'Login',
