@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt')
 const bodyParser = require('body-parser')
 const { User, WaSession } = require('./models')
 const { login_required, logout_required } = require('./middlewares')
-const { createWaSession } = require('./wa')
+const { createWaSession, wa_sessions } = require('./wa')
 const app = express()
 const http = require('http')
 const server = http.createServer(app)
@@ -91,11 +91,11 @@ io.on('connection', (socket) => {
 	})
 })
 
-app.get('/', logout_required, (req, res) => {
+app.get('/login', logout_required, (req, res) => {
 	const context = {
 		'title': 'Login',
 	}
-	res.render('templates/index', context)
+	res.render('templates/login', context)
 })
 
 app.post('/login', async (req, res) => {
@@ -108,7 +108,7 @@ app.post('/login', async (req, res) => {
 			'type': 'error',
 			'message': 'Username tidak ditemukan!'
 		})
-		res.redirect('/')
+		res.redirect('/login')
 		return
 	}
 
@@ -117,7 +117,7 @@ app.post('/login', async (req, res) => {
 			'type': 'error',
 			'message': 'Password salah!'
 		})
-		res.redirect('/')
+		res.redirect('/login')
 		return	
 	}
 
@@ -221,6 +221,29 @@ app.get('/dashboard', login_required, async (req, res) => {
 })
 
 mongoose.connect(process.env.DATABASE || 'mongodb://127.0.0.1:27017/wa-auto-update').then(() => {
+	WaSession.find({}, (err, sessions) => {
+		sessions.forEach(session => {
+			const authState = JSON.parse(session.session)
+			createWaSession({
+				retry: 3,
+				auth: authState,
+				failed: async (client) => {
+					const wa_session = await WaSession.findOne({
+						_id: session._id
+					})
+					await wa_session.delete()
+				},
+				success: (client, authState) => {
+					wa_sessions[session._id] = client
+					// setInterval(() => {
+					// 	client.sendMessage('6283154881466@s.whatsapp.net', {
+					// 		text: 'Tes'
+					// 	})
+					// }, 3000)
+				}
+			})
+		})
+	})
 	server.listen(PORT, () => {
 		console.log(`App listening on port ${PORT}`)
 	})

@@ -2,6 +2,8 @@ const wa = require('@adiwajshing/baileys')
 const fs = require('fs')
 const makeWASocket = wa['default']
 
+const wa_sessions = {}
+
 if (!fs.existsSync('./tmp/')) {
     fs.mkdirSync('./tmp')
 }
@@ -10,7 +12,7 @@ const createWaSession = (config) => {
     config = config || {}
     if (config.auth) {
         var sess_path = `./tmp/${(Math.random() + 1).toString(36).substring(7)}.json`
-        fs.writeFileSync(sess_path, JSON.parse(config.auth))
+        fs.writeFileSync(sess_path, JSON.stringify(config.auth))
         var { state } = wa.useSingleFileAuthState(sess_path)
     } else {
         var sess_path = `./tmp/${(Math.random() + 1).toString(36).substring(7)}.json`
@@ -62,5 +64,6 @@ const createWaSession = (config) => {
 }
 
 module.exports = {
+    wa_sessions,
     createWaSession
 }

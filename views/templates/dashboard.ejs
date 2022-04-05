@@ -8,8 +8,8 @@
 
     <div class="mx-5 mt-5" x-data="data" x-init="init">
         <center>
-            <div style="height: 276px; width: 276px;" class="rounded bg-gray-300 my-2 p-1" x-show="!(connect_status == 'connected')">
-                <img :src="qr_uri" x-show="qr_showed">
+            <div style="height: 276px; width: 276px;" class="rounded bg-gray-300 my-2 p-1" x-show="connect_status != 'connected'">
+                <img :src="qr_uri" x-show="qr_uri != ''">
             </div>
             <div x-show="connect_status == 'disconnect'">
                 <button x-on:click="button_clicked" class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600">Connect</button>
@@ -47,7 +47,6 @@
                 },
                 whatsapp_id: '<%= whatsapp_id %>',
                 whatsapp_name: '<%= whatsapp_name %>',
-                qr_showed: false,
                 qr_uri: '',
                 connect_status: '<%= connect_status %>',
                 button_clicked() {
