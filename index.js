@@ -47,7 +47,6 @@ app.use((req, res, next) => {
 })
 
 io.on('connection', (socket) => {
-	console.log('a user connected to socket')
 	socket.on('connect-wa', async (sess_id) => {
 	  	const sess = await mongoose.connection.db.collection('sessions').findOne({
 			_id: sess_id
@@ -85,9 +84,23 @@ io.on('connection', (socket) => {
 					session: JSON.stringify(authState)
 				})
 				await wa_session.save()
+				console.log(wa_session._id)
+				wa_sessions[wa_session._id] = client
 				socket.emit('connected-wa', authState)
 			}
 		})
+	})
+
+	socket.on('disconnect-wa', async (whatsapp_session_id) => {
+		const client = wa_sessions[whatsapp_session_id]
+		console.log(whatsapp_session_id)
+		if (client) {
+			const whatsapp_session_obj = await WaSession.findOne({_id: whatsapp_session_id})
+			if (whatsapp_session_obj) {
+				await whatsapp_session_obj.delete()
+			}
+			await client.logout()
+		}
 	})
 })
 
@@ -125,7 +138,7 @@ app.post('/login', async (req, res) => {
 			'message': 'Password salah!'
 		})
 		res.redirect('/login')
-		return	
+		return
 	}
 
 	req.session.user = user
@@ -133,7 +146,7 @@ app.post('/login', async (req, res) => {
 		'type': 'success',
 		'message': 'Ok'
 	})
-	res.redirect('/')
+	res.redirect('/dashboard')
 })
 
 app.get('/register', (req, res) => {
@@ -151,7 +164,7 @@ app.post('/register', async (req, res) => {
 			'type': 'error',
 			'message': 'Password minimal 5, maksimal 12'
 		})
-		res.redirect('')
+		res.redirect('/register')
 		return
 	} 
 
@@ -160,7 +173,7 @@ app.post('/register', async (req, res) => {
 			'type': 'error',
 			'message': 'Konfirmasi password minimal 5, maksimal 12'
 		})
-		res.redirect('')
+		res.redirect('/register')
 		return
 	}
 
@@ -169,7 +182,7 @@ app.post('/register', async (req, res) => {
 			'type': 'error',
 			'message': 'Password dan Konfirmasi password tidak sama :)'
 		})
-		res.redirect('')
+		res.redirect('/register')
 		return
 	}
 
@@ -178,7 +191,7 @@ app.post('/register', async (req, res) => {
 			'type': 'error',
 			'message': 'Username sudah terdaftar :)'
 		})
-		res.redirect('')
+		res.redirect('/register')
 		return
 	}
 
@@ -195,7 +208,7 @@ app.post('/register', async (req, res) => {
 		'type': 'success',
 		'message': 'Sukses mendaftar :)'
 	})
-	res.redirect('')
+	res.redirect('/register')
 })
 
 
@@ -214,12 +227,14 @@ app.get('/dashboard', login_required, async (req, res) => {
 	}
 
 	if (wa_session) {
+		context.wa_session_id = wa_session._id
 		const authState = JSON.parse(wa_session.session)
 		context.whatsapp_id = authState.creds.me.id
 		context.whatsapp_name = authState.creds.me.verifiedName || authState.creds.me.name || 'Anonymous';
 	} else {
 		context.whatsapp_id = ''
 		context.whatsapp_name = ''
+		context.wa_session_id = ''
 	}
 
 	context.connect_status = wa_session ? 'connected' : 'disconnect'
@@ -238,15 +253,12 @@ mongoose.connect(process.env.DATABASE || 'mongodb://127.0.0.1:27017/wa-auto-upda
 					const wa_session = await WaSession.findOne({
 						_id: session._id
 					})
-					await wa_session.delete()
+					if (wa_session) {
+						await wa_session.delete()
+					}
 				},
 				success: (client, authState) => {
 					wa_sessions[session._id] = client
-					// setInterval(() => {
-					// 	client.sendMessage('6283154881466@s.whatsapp.net', {
-					// 		text: 'Tes'
-					// 	})
-					// }, 3000)
 				}
 			})
 		})

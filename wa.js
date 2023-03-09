@@ -1,7 +1,7 @@
 const wa = require('@adiwajshing/baileys')
 const fs = require('fs')
-const makeWASocket = wa['default']
-
+const { default: makeWASocket } = require('@adiwajshing/baileys')
+ 
 const wa_sessions = {}
 
 if (!fs.existsSync('./tmp/')) {
@@ -23,7 +23,8 @@ const createWaSession = (config) => {
         const client = makeWASocket({
             auth: state
         })
-    
+        
+        
         if (config.before) {
             config.before(client)
         }
@@ -51,10 +52,15 @@ const createWaSession = (config) => {
                 }
             } else if (connection == 'open') {
                 setTimeout(() => {
-                    fs.unlinkSync(sess_path)
+                    try {
+                        fs.unlinkSync(sess_path)
+                    } catch(e) {
+                        
+                    }
                 }, 8000)
                 if (config.success) {
                     config.success(client, state)
+					// wa_sessions[state.] = client
                 }
             }
         })

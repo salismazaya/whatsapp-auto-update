@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 
+mongoose.set('strictQuery', true);
+
 const User = mongoose.model('User', {
     name: {
         type: String,

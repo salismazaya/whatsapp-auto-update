@@ -1,62 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-	<%- include('layouts/head') %>
+    <%- include('layouts/head') %>
 </head>
+
 <body>
-	<%- include('layouts/navbar') %>
+    <%- include('layouts/navbar') %>
 
-    <div class="mx-5 mt-5" x-data="data" x-init="init">
-        <center>
-            <div style="height: 276px; width: 276px;" class="rounded bg-gray-300 my-2 p-1" x-show="connect_status != 'connected'">
-                <img :src="qr_uri" x-show="qr_uri != ''">
-            </div>
-            <div x-show="connect_status == 'disconnect'">
-                <button x-on:click="button_clicked" class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600">Connect</button>
-            </div>
-            <div x-show="connect_status == 'connecting'">
-                <button class="rounded-sm px-2 py-1 text-white bg-yellow-600">Connecting</button>
-            </div>
-            <div x-show="connect_status == 'connected'">
-                <p>Whastsapp ID: <span x-text="whatsapp_id"></span></p>
-                <p>Name: <span x-text="whatsapp_name"></span></p>
-                <button class="rounded-sm px-2 my-1 py-1 text-white bg-green-600 block">Connected</button>
-                <button class="rounded-sm px-2.5 my-1 py-1 text-white bg-red-600 hover:bg-red-700 block">Disonnect</button>
-            </div>
-        </center>
-    </div>
+        <div class="mt-5 max-w-md mx-auto" x-data="data" x-init="init">
+            <center>
+                <div style="height: 276px; width: 276px;" class="rounded bg-gray-300 my-2 p-1"
+                    x-show="connect_status != 'connected'">
+                    <img :src="qr_uri" x-show="qr_uri != ''">
+                </div>
+                <div x-show="connect_status == 'disconnect'">
+                    <button x-on:click="button_clicked"
+                        class="bg-blue-500 rounded-sm px-2 py-1 text-white hover:bg-blue-600">Connect</button>
+                </div>
+                <div x-show="connect_status == 'connecting'">
+                    <button class="rounded-sm px-2 py-1 text-white bg-yellow-600">Connecting</button>
+                </div>
+                <div x-show="connect_status == 'connected'">
+                    <p>Whastsapp ID: <span x-text="whatsapp_id"></span></p>
+                    <p>Name: <span x-text="whatsapp_name"></span></p>
+                    <button class="rounded-sm px-2 my-1 py-1 text-white bg-green-600 block">Connected</button>
+                    <button class="rounded-sm px-2.5 my-1 py-1 text-white bg-red-600 hover:bg-red-700 block"
+                        x-on:click="disconnect">Tap Here to Disonnect</button>
+                </div>
 
-    <%- include('layouts/footer') %> 
+                <template x-if="connect_status == 'connected'">
+                    <div class="bg-gray-300 rounded p-1 mt-5">
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        function data() {
-            return {
-                init() {
-                    socket.on('QRImage', (img_uri) => {
-                        this.qr_showed = true;
-                        this.qr_uri = img_uri
-                    });
+                        <div class="flex justify-between items-center">
+                            <p>Detect contacts that have not been saved</p>
+                            <template x-if="detect_contact_active">
+                                <div class="w-14 h-5 bg-green-100 flex items-center justify-end rounded">
+                                    <button x-on:click="detect_contact_active = !detect_contact_active"
+                                        class="w-7 rounded h-5 bg-green-500"></button>
+                                </div>
+                            </template>
+                            <template x-if="!detect_contact_active">
+                                <div class="w-14 h-5 bg-red-100 flex items-center justify-start rounded">
+                                    <button x-on:click="detect_contact_active = !detect_contact_active"
+                                        class="w-7 rounded h-5 bg-red-500"></button>
+                                </div>
+                            </template>
 
-                    socket.on('connected-wa', (authState) => {
-                        this.whatsapp_id = authState.creds.me.id;
-                        this.whatsapp_name = authState.creds.me.verifiedName || authState.creds.me.name || 'Anonymous';
-                        this.connect_status = 'connected';
-                    });
-                },
-                whatsapp_id: '<%= whatsapp_id %>',
-                whatsapp_name: '<%= whatsapp_name %>',
-                qr_uri: '',
-                connect_status: '<%= connect_status %>',
-                button_clicked() {
-                    if (this.connect_status == 'disconnect') {
-                        this.connect_status = 'connecting';
+                        </div>
+
+                    </div>
+                </template>
+
+            </center>
+        </div>
+
+        <%- include('layouts/footer') %>
+
+            <script src="/socket.io/socket.io.js"></script>
+            <script>
+                const socket = io();
+                function data() {
+                    return {
+                        init() {
+                            socket.on('QRImage', (img_uri) => {
+                                this.qr_showed = true;
+                                this.qr_uri = img_uri
+                            });
+
+                            socket.on('connected-wa', (authState) => {
+                                this.whatsapp_id = authState.creds.me.id;
+                                this.whatsapp_name = authState.creds.me.verifiedName || authState.creds.me.name || 'Anonymous';
+                                this.connect_status = 'connected';
+                            });
+                        },
+                        whatsapp_id: '<%= whatsapp_id %>',
+                        whatsapp_name: '<%= whatsapp_name %>',
+                        qr_uri: '',
+                        connect_status: '<%= connect_status %>',
+                        detect_contact_active: true,
+                        button_clicked() {
+                            if (this.connect_status == 'disconnect') {
+                                this.connect_status = 'connecting';
+                            }
+                            socket.emit('connect-wa', '<%= sess_id %>');
+                        },
+                        disconnect() {
+                            socket.emit('disconnect-wa', '<%= wa_session_id %>')
+                            this.connect_status = 'disconnect';
+                            this.qr_uri = '';
+                        }
                     }
-                    socket.emit('connect-wa', '<%= sess_id %>')
-                },
-            }
-        }
-    </script>
+                }
+            </script>
 </body>
+
 </html>

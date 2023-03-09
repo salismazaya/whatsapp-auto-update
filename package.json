@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node .",
     "build": "tailwindcss -i ./style.css -o ./static/css/tailwind.css && cleancss -o ./static/css/tailwind.min.css ./static/css/tailwind.css",
     "dev": "nodemon ."
   },
